@@ -72,11 +72,13 @@
   cursor: pointer;
 }
 
-option.highlighted{
+.selected {
+    background: hsl(200, 100%, 70%);
+}
+
+.highlighted{
     background: hsl(200, 100%, 50%);
     color: white;
 }
 
-option.selected {
-    background: hsl(200, 100%, 70%);
-}
+
