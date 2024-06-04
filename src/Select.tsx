@@ -1,16 +1,29 @@
 import { useEffect, useState } from "react";
 import styles from "./select.module.css";
-type SelectedOption = {
+export type SelectedOption = {
   label: string;
-  value: any;
+  value: string | number;
 };
-type SelectedProp = {
-  options: SelectedOption[];
+type MultipleSelectProps = {
+  multiple: true;
+  value: SelectedOption[];
+  onchange: (value: SelectedOption[]) => void;
+};
+type SingleSelectProps = {
+  multiple?: false;
   value?: SelectedOption;
   onchange: (value: SelectedOption | undefined) => void;
 };
+type SelectedProp = {
+  options: SelectedOption[];
+} & (SingleSelectProps | MultipleSelectProps);
 
-export const Select = ({ value, onchange, options }: SelectedProp) => {
+export const Select = ({
+  multiple,
+  value,
+  onchange,
+  options,
+}: SelectedProp) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [highlightedIndex, setHighlightedIndex] = useState<number>();
   const openOption = () => {
@@ -20,13 +33,24 @@ export const Select = ({ value, onchange, options }: SelectedProp) => {
     setIsOpen(false);
   };
   const clearOption = () => {
-    onchange(undefined);
+    multiple ? onchange([]) : onchange(undefined);
   };
   const selectedOption = (option: SelectedOption) => {
-    onchange(option);
+    if (multiple) {
+      if (value.includes(option)) {
+        onchange(value.filter((o) => o !== option));
+      } else {
+        onchange([...value, option]);
+      }
+    } else {
+      if (option !== value) {
+        onchange(option);
+      }
+    }
   };
+
   const isOptionSelected = (option: SelectedOption) => {
-    return option === value;
+    return multiple ? value.includes(option) : option === value;
   };
   useEffect(() => {
     if (isOpen) {
@@ -40,7 +64,23 @@ export const Select = ({ value, onchange, options }: SelectedProp) => {
       tabIndex={0}
       className={styles.container}
     >
-      <span className={styles.value}>{value?.label}</span>
+      <span className={styles.value}>
+        {multiple
+          ? value.map((v) => (
+              <button
+                key={v.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectedOption(v);
+                  closeOption();
+                }}
+                className={styles['option-badge']}
+              >
+                {v.label} <span  className={styles["clear-btn"]}>&times;</span>
+              </button>
+            ))
+          : value?.label}
+      </span>
       <button
         onClick={(e) => {
           e.stopPropagation();
