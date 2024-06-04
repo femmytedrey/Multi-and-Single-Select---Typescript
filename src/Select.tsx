@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./select.module.css";
 export type SelectedOption = {
   label: string;
@@ -25,7 +25,8 @@ export const Select = ({
   options,
 }: SelectedProp) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [highlightedIndex, setHighlightedIndex] = useState<number>();
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
   const openOption = () => {
     setIsOpen((prev) => !prev);
   };
@@ -57,8 +58,48 @@ export const Select = ({
       setHighlightedIndex(0);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target !== containerRef.current) return;
+
+      switch (e.code) {
+        case "Enter":
+        case "Space":
+          setIsOpen((prev) => !prev);
+          if (isOpen) {
+            selectedOption(options[highlightedIndex]);
+          }
+          break;
+        case "ArrowUp":
+        case "ArrowDown": {
+          if (!isOpen) {
+            setIsOpen(true);
+            break;
+          }
+          const newValue = highlightedIndex + (e.code === "ArrowDown" ? 1 : -1);
+          if (newValue >= 0 && newValue < options.length) {
+            setHighlightedIndex(newValue);
+          }
+          break;
+        }
+        case "Escape":
+          setIsOpen(false);
+          break;
+      }
+    };
+
+    const containerElement = containerRef.current;
+    containerElement?.addEventListener("keydown", handler);
+
+    return () => {
+      containerElement?.removeEventListener("keydown", handler);
+    };
+  }, [isOpen, highlightedIndex, options]);
+
   return (
     <div
+      ref={containerRef}
       onClick={openOption}
       onBlur={closeOption}
       tabIndex={0}
@@ -74,9 +115,9 @@ export const Select = ({
                   selectedOption(v);
                   closeOption();
                 }}
-                className={styles['option-badge']}
+                className={styles["option-badge"]}
               >
-                {v.label} <span  className={styles["clear-btn"]}>&times;</span>
+                {v.label} <span className={styles["clear-btn"]}>&times;</span>
               </button>
             ))
           : value?.label}
